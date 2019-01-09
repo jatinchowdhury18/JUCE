@@ -710,7 +710,7 @@ namespace
             ConsoleApplication::fail ("Identifier " + args[2].text + " is not valid for the OS " + args[1].text);
 
         auto userAppData = File::getSpecialLocation (File::userApplicationDataDirectory);
-
+        //ConsoleApplication::fail (userAppData.getFullPathName());
        #if JUCE_MAC
         userAppData = userAppData.getChildFile ("Application Support");
        #endif
