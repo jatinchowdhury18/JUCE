@@ -1073,8 +1073,10 @@ public:
                 auto archDir        = bundleContents + String ("\\") + (config.is64Bit() ? "x64" : "Win32");
                 auto executable     = archDir + String ("\\") + outputFilename;
 
-                auto pkgScript = String ("copy /Y ") + getOutputFilePath (config, false).quoted() + String (" ") + executable.quoted() + String ("\r\ncall ")
-                                     + createRebasedPath (bundleScript) + String (" ") + archDir.quoted() + String (" ") + createRebasedPath (iconFilePath);
+                //auto pkgScript = String ("copy /Y ") + getOutputFilePath (config, false).quoted() + String (" ") + executable.quoted() + String ("\r\ncall ")
+                //                     + createRebasedPath (bundleScript) + String (" ") + archDir.quoted() + String (" ") + createRebasedPath (iconFilePath);
+                auto pkgScript = String ("call ") + createRebasedPath (bundleScript) + String (" ") + archDir.quoted() + String (" ") + createRebasedPath (iconFilePath)
+                               + String ("\r\ncopy /Y ") + getOutputFilePath (config, false).quoted() + String (" ") + executable.quoted();
 
                 if (config.isPluginBinaryCopyStepEnabled())
                     return pkgScript + "\r\n" + "xcopy " + bundleDir.quoted() + " "
