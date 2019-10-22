@@ -777,12 +777,6 @@ private:
     const LV2UI_Resize* uiResize;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JuceLv2ParentContainer);
-};
-
-//==============================================================================
-/**
-    Juce LV2 UI handle
-*/
 class JuceLv2UIWrapper : public AudioProcessorListener,
                          public Timer
 {
