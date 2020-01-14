@@ -535,12 +535,9 @@ void createLv2Files(const char* basename)
 //==============================================================================
 #if JUCE_LINUX
 
-class SharedMessageThread : public Thread
+struct SharedMessageThread  : public Thread
 {
-public:
-    SharedMessageThread()
-      : Thread ("Lv2MessageThread"),
-        initialised (false)
+    SharedMessageThread()  : Thread ("Lv2MessageThread")
     {
         startThread (7);
 
@@ -548,25 +545,29 @@ public:
             sleep (1);
     }
 
-    ~SharedMessageThread()
+    ~SharedMessageThread() override
     {
-        MessageManager::getInstance()->stopDispatchLoop();
+        signalThreadShouldExit();
+        JUCEApplicationBase::quit();
         waitForThreadToExit (5000);
     }
 
     void run() override
     {
-        const ScopedJuceInitialiser_GUI juceInitialiser;
-
-        MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+        ScopedJuceInitialiser_GUI juceInitialiser;
         initialised = true;
 
-        MessageManager::getInstance()->runDispatchLoop();
+        MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+
+        ScopedXDisplay xDisplay;
+
+        while ((! threadShouldExit()) && MessageManager::getInstance()->runDispatchLoopUntil (250))
+        {}
     }
 
-private:
-    volatile bool initialised;
+    bool initialised = false;
 };
+
 #endif
 
 #if ! JUCE_AUDIOPROCESSOR_NO_GUI
