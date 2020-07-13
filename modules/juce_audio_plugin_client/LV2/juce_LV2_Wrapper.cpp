@@ -61,19 +61,19 @@
 #include <iostream>
 
 // LV2 includes..
-#include <lv2/lv2plug.in/ns/lv2core/lv2.h>
-#include <lv2/lv2plug.in/ns/ext/atom/atom.h>
-#include <lv2/lv2plug.in/ns/ext/atom/util.h>
-#include <lv2/lv2plug.in/ns/ext/buf-size/buf-size.h>
-#include <lv2/lv2plug.in/ns/ext/instance-access/instance-access.h>
-#include <lv2/lv2plug.in/ns/ext/midi/midi.h>
-#include <lv2/lv2plug.in/ns/ext/options/options.h>
-#include <lv2/lv2plug.in/ns/ext/port-props/port-props.h>
-#include <lv2/lv2plug.in/ns/ext/presets/presets.h>
-#include <lv2/lv2plug.in/ns/ext/state/state.h>
-#include <lv2/lv2plug.in/ns/ext/time/time.h>
-#include <lv2/lv2plug.in/ns/extensions/ui/ui.h>
-#include <lv2/lv2plug.in/ns/ext/urid/urid.h>
+#include "includes/lv2.h"
+#include "includes/atom.h"
+#include "includes/atom-util.h"
+#include "includes/buf-size.h"
+#include "includes/instance-access.h"
+#include "includes/midi.h"
+#include "includes/options.h"
+#include "includes/port-props.h"
+#include "includes/presets.h"
+#include "includes/state.h"
+#include "includes/time.h"
+#include "includes/ui.h"
+#include "includes/urid.h"
 #include "includes/lv2_external_ui.h"
 #include "includes/lv2_programs.h"
 
