@@ -506,27 +506,27 @@ const String makePresetsFile (AudioProcessor* const filter)
 void createLv2Files(const char* basename)
 {
     const ScopedJuceInitialiser_GUI juceInitialiser;
-    ScopedPointer<AudioProcessor> filter (createPluginFilterOfType (AudioProcessor::wrapperType_LV2));
+    std::unique_ptr<AudioProcessor> filter(createPluginFilterOfType (AudioProcessor::wrapperType_LV2));
 
     String binary(basename);
     String binaryTTL(binary + ".ttl");
 
     std::cout << "Writing manifest.ttl..."; std::cout.flush();
     std::fstream manifest("manifest.ttl", std::ios::out);
-    manifest << makeManifestFile(filter, binary) << std::endl;
+    manifest << makeManifestFile(filter.get(), binary) << std::endl;
     manifest.close();
     std::cout << " done!" << std::endl;
 
     std::cout << "Writing " << binary << ".ttl..."; std::cout.flush();
     std::fstream plugin(binaryTTL.toUTF8(), std::ios::out);
-    plugin << makePluginFile(filter, JucePlugin_MaxNumInputChannels, JucePlugin_MaxNumOutputChannels) << std::endl;
+    plugin << makePluginFile(filter.get(), JucePlugin_MaxNumInputChannels, JucePlugin_MaxNumOutputChannels) << std::endl;
     plugin.close();
     std::cout << " done!" << std::endl;
 
 #if JucePlugin_WantsLV2Presets
     std::cout << "Writing presets.ttl..."; std::cout.flush();
     std::fstream presets("presets.ttl", std::ios::out);
-    presets << makePresetsFile(filter) << std::endl;
+    presets << makePresetsFile(filter.get()) << std::endl;
     presets.close();
     std::cout << " done!" << std::endl;
 #endif
@@ -801,8 +801,8 @@ public:
 
         if (filter->hasEditor())
         {
-            editor = filter->createEditorIfNeeded();
-
+            editor = std::unique_ptr<AudioProcessorEditor>(filter->createEditorIfNeeded());
+            
             if (editor == nullptr)
             {
                 *widget = nullptr;
@@ -830,8 +830,8 @@ public:
                 if (externalUIHost->plugin_human_id != nullptr)
                     title = externalUIHost->plugin_human_id;
 
-                externalUI = new JuceLv2ExternalUIWrapper (editor, title);
-                *widget = externalUI;
+                externalUI = std::make_unique<JuceLv2ExternalUIWrapper>(editor.get(), title);
+                *widget = externalUI.get();
                 startTimer (100);
             }
             else
@@ -877,7 +877,7 @@ public:
 
         if (editor != nullptr)
         {
-            filter->editorBeingDeleted (editor);
+            filter->editorBeingDeleted (editor.get());
             editor = nullptr;
         }
     }
@@ -981,7 +981,7 @@ public:
         if (isExternal)
         {
             resetExternalUI (features);
-            *widget = externalUI;
+            *widget = externalUI.get();
         }
         else
         {
@@ -1006,7 +1006,7 @@ public:
 
 private:
     AudioProcessor* const filter;
-    ScopedPointer<AudioProcessorEditor> editor;
+    std::unique_ptr<AudioProcessorEditor> editor;
 
     LV2UI_Write_Function writeFunction;
     LV2UI_Controller controller;
@@ -1018,11 +1018,11 @@ private:
     const LV2UI_Touch* uiTouch;
     const LV2_Programs_Host* programsHost;
 
-    ScopedPointer<JuceLv2ExternalUIWrapper> externalUI;
+    std::unique_ptr<JuceLv2ExternalUIWrapper> externalUI;
     const LV2_External_UI_Host* externalUIHost;
     Point<int> lastExternalUIPos;
 
-    ScopedPointer<JuceLv2ParentContainer> parentContainer;
+    std::unique_ptr<JuceLv2ParentContainer> parentContainer;
     const LV2UI_Resize* uiResize;
 
     //==============================================================================
@@ -1071,7 +1071,7 @@ private:
         if (parent != nullptr)
         {
             if (parentContainer == nullptr)
-                parentContainer = new JuceLv2ParentContainer (editor, uiResize);
+                parentContainer = std::make_unique<JuceLv2ParentContainer>(editor.get(), uiResize);
 
             parentContainer->setVisible (false);
 
@@ -1130,7 +1130,7 @@ public:
     {
         {
             const MessageManagerLock mmLock;
-            filter = createPluginFilterOfType (AudioProcessor::wrapperType_LV2);
+            filter = std::unique_ptr<AudioProcessor>(createPluginFilterOfType (AudioProcessor::wrapperType_LV2));
         }
         jassert (filter != nullptr);
 
@@ -1421,7 +1421,7 @@ public:
                         if (event->body.type == uridMidiEvent)
                         {
                             const uint8* data = (const uint8*)(event + 1);
-                            midiEvents.addEvent(data, event->body.size, event->time.frames);
+                            midiEvents.addEvent(data, event->body.size, static_cast<int>(event->time.frames));
                             continue;
                         }
  #endif
@@ -1499,7 +1499,7 @@ public:
                                 else if (beatUnit->type == uridAtomInt)
                                     lastPositionData.beatUnit = ((LV2_Atom_Int*)beatUnit)->body;
                                 else if (beatUnit->type == uridAtomLong)
-                                    lastPositionData.beatUnit = ((LV2_Atom_Long*)beatUnit)->body;
+                                    lastPositionData.beatUnit = static_cast<uint32_t>(((LV2_Atom_Long*)beatUnit)->body);
 
                                 if (lastPositionData.beatUnit > 0)
                                     curPosInfo.timeSigDenominator = lastPositionData.beatUnit;
@@ -1821,7 +1821,7 @@ public:
 #else
         if (type == uridMap->map (uridMap->handle, LV2_ATOM__Chunk))
         {
-            filter->setCurrentProgramStateInformation (data, size);
+            filter->setCurrentProgramStateInformation (data, static_cast<int>(size));
 
            #if ! JUCE_AUDIOPROCESSOR_NO_GUI
             if (ui != nullptr)
@@ -1859,9 +1859,9 @@ public:
         if (ui != nullptr)
             ui->resetIfNeeded (writeFunction, controller, widget, features);
         else
-            ui = new JuceLv2UIWrapper (filter, writeFunction, controller, widget, features, isExternal);
+            ui = std::make_unique<JuceLv2UIWrapper>(filter.get(), writeFunction, controller, widget, features, isExternal);
 
-        return ui;
+        return ui.get();
     }
 #endif
 
@@ -1872,9 +1872,9 @@ private:
     SharedResourcePointer<ScopedJuceInitialiser_GUI> sharedJuceGUI;
 #endif
 
-    ScopedPointer<AudioProcessor> filter;
+     std::unique_ptr<AudioProcessor> filter;
 #if ! JUCE_AUDIOPROCESSOR_NO_GUI
-    ScopedPointer<JuceLv2UIWrapper> ui;
+     std::unique_ptr<JuceLv2UIWrapper> ui;
 #endif
     HeapBlock<float*> channels;
     MidiBuffer midiEvents;
