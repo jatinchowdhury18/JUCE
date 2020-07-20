@@ -54,6 +54,12 @@
 
 #if JUCE_LINUX && ! JUCE_AUDIOPROCESSOR_NO_GUI
  #include <X11/Xlib.h>
+ #define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
+
+//#include "../utility/juce_IncludeModuleHeaders.h"
+
+#include "../utility/juce_FakeMouseMoveGenerator.h"
+#include "../utility/juce_WindowsHooks.h"
  #undef KeyPress
 #endif
 
@@ -94,6 +100,43 @@
 #endif
 
 using namespace juce;
+
+template<class T>
+  struct StdPtr:std::unique_ptr<T> {
+  using std::unique_ptr<T>::unique_ptr;
+  StdPtr(T *x) : std::unique_ptr<T>(x) {}
+  operator T*()const{return this->get();}
+};
+
+const float getParameter2(AudioProcessor* const filter, int index)
+{
+    if(auto* param = filter->getParameters()[index])	
+    return param->getValue();
+    else
+    return 0.0;	
+}	
+
+const void setParameter2(AudioProcessor* const filter, int index, float value)
+{
+    if (auto* param = filter->getParameters()[index])	
+    param->setValue(value);
+}	
+
+bool isParameterAutomatable2(AudioProcessor* const filter, int index)
+{
+    if (auto* param = filter->getParameters()[index])
+    return param->isAutomatable();
+
+    return true;
+}
+
+const String getParameterName2(AudioProcessor* const filter, int index)
+{
+    if(auto* param = filter->getParameters()[index])
+    return param->getName(1024);
+    else
+    return {};
+}
 
 /** Returns plugin type, defined in AppConfig.h or JucePluginCharacteristics.h */
 const String getPluginType()
@@ -383,7 +426,7 @@ const String makePluginFile (AudioProcessor* const filter, const int maxNumInput
     }
 
     // Parameters
-    for (int i=0; i < filter->getNumParameters(); ++i)
+    for (int i=0; i < filter->getParameters().size(); ++i)
     {
         if (i == 0)
             text += "    lv2:port [\n";
@@ -392,21 +435,21 @@ const String makePluginFile (AudioProcessor* const filter, const int maxNumInput
 
         text += "        a lv2:InputPort, lv2:ControlPort ;\n";
         text += "        lv2:index " + String(portIndex++) + " ;\n";
-        text += "        lv2:symbol \"" + nameToSymbol(filter->getParameterName(i), i) + "\" ;\n";
+        text += "        lv2:symbol \"" + nameToSymbol(getParameterName2(filter, i), i) + "\" ;\n";
 
-        if (filter->getParameterName(i).isNotEmpty())
-            text += "        lv2:name \"" + filter->getParameterName(i) + "\" ;\n";
+        if (getParameterName2(filter, i).isNotEmpty())
+            text += "        lv2:name \"" + getParameterName2(filter, i) + "\" ;\n";
         else
             text += "        lv2:name \"Port " + String(i+1) + "\" ;\n";
 
-        text += "        lv2:default " + String::formatted("%f", safeParamValue(filter->getParameter(i))) + " ;\n";
+        text += "        lv2:default " + String::formatted("%f", safeParamValue(getParameter2(filter, i))) + " ;\n";
         text += "        lv2:minimum 0.0 ;\n";
         text += "        lv2:maximum 1.0 ;\n";
 
-        if (! filter->isParameterAutomatable(i))
+        if (! isParameterAutomatable2(filter, i))
             text += "        lv2:portProperty <" LV2_PORT_PROPS__expensive "> ;\n";
 
-        if (i+1 == filter->getNumParameters())
+        if (i+1 == filter->getParameters().size())
             text += "    ] ;\n\n";
         else
             text += "    ] ,\n";
@@ -467,7 +510,7 @@ const String makePresetsFile (AudioProcessor* const filter)
         preset += "            rdf:value \"" + chunkString + "\"^^xsd:base64Binary ;\n";
         preset += "        ] ;\n";
  #endif
-        if (filter->getNumParameters() == 0)
+        if (filter->getParameters().size() == 0)
         {
             preset += "    ] .\n\n";
             continue;
@@ -479,17 +522,17 @@ const String makePresetsFile (AudioProcessor* const filter)
         // Port values
         usedSymbols.clear();
 
-        for (int j=0; j < filter->getNumParameters(); ++j)
+        for (int j=0; j < filter->getParameters().size(); ++j)
         {
               if (j == 0)
                 preset += "    lv2:port [\n";
             else
                 preset += "    [\n";
 
-            preset += "        lv2:symbol \"" + nameToSymbol(filter->getParameterName(j), j) + "\" ;\n";
-            preset += "        pset:value " + String::formatted("%f", safeParamValue(filter->getParameter(j))) + " ;\n";
+            preset += "        lv2:symbol \"" + nameToSymbol(getParameterName2(filter, j), j) + "\" ;\n";
+            preset += "        pset:value " + String::formatted("%f", safeParamValue(getParameter2(filter, j))) + " ;\n";
 
-            if (j+1 == filter->getNumParameters())
+            if (j+1 == filter->getParameters().size())
                 preset += "    ] ";
             else
                 preset += "    ] ,\n";
@@ -558,6 +601,8 @@ struct SharedMessageThread  : public Thread
         initialised = true;
 
         MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+
+        XWindowSystem::getInstance();
 
         while ((! threadShouldExit()) && MessageManager::getInstance()->runDispatchLoopUntil (250))
         {}
@@ -758,6 +803,9 @@ public:
         const int cw = child->getWidth();
         const int ch = child->getHeight();
 
+#if JUCE_LINUX
+        X11Symbols::getInstance()->xResizeWindow (display, (Window) getWindowHandle(), cw, ch);
+#else
         setSize (cw, ch);
 
         if (uiResize != nullptr)
@@ -775,6 +823,9 @@ public:
 private:
     //==============================================================================
     const LV2UI_Resize* uiResize;
+#if JUCE_LINUX
+        ::Display* display = XWindowSystem::getInstance()->getDisplay();
+#endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JuceLv2ParentContainer);
 class JuceLv2UIWrapper : public AudioProcessorListener,
@@ -801,8 +852,8 @@ public:
 
         if (filter->hasEditor())
         {
-            editor = std::unique_ptr<AudioProcessorEditor>(filter->createEditorIfNeeded());
-            
+            editor = filter->createEditorIfNeeded();
+
             if (editor == nullptr)
             {
                 *widget = nullptr;
@@ -1025,6 +1076,10 @@ private:
     std::unique_ptr<JuceLv2ParentContainer> parentContainer;
     const LV2UI_Resize* uiResize;
 
+#if JUCE_LINUX
+         ::Display* display = XWindowSystem::getInstance()->getDisplay();
+#endif
+
     //==============================================================================
     void resetExternalUI (const LV2_Feature* const* features)
     {
@@ -1083,7 +1138,7 @@ private:
 #if JUCE_LINUX
             Window hostWindow = (Window) parent;
             Window editorWnd  = (Window) parentContainer->getWindowHandle();
-            // XReparentWindow (display.display, editorWnd, hostWindow, 0, 0);
+            X11Symbols::getInstance()->xReparentWindow (display, editorWnd, hostWindow, 0, 0);
 #endif
 
             parentContainer->reset (uiResize);
@@ -1155,10 +1210,10 @@ public:
         for (int i=0; i < numOutChans; ++i)
             portAudioOuts[i] = nullptr;
 
-        portControls.insertMultiple (0, nullptr, filter->getNumParameters());
+        portControls.insertMultiple (0, nullptr, filter->getParameters().size());
 
-        for (int i=0; i < filter->getNumParameters(); ++i)
-            lastControlValues.add (filter->getParameter(i));
+        for (int i=0; i < filter->getParameters().size(); ++i)
+            lastControlValues.add (getParameter3(i));
 
         curPosInfo.resetToDefault();
 
@@ -1254,6 +1309,39 @@ public:
 
     //==============================================================================
     // LV2 core calls
+    
+const float getParameter3(int index)
+{
+    if(auto* param = filter->getParameters()[index])	
+    return param->getValue();
+    else
+    return 0.0;	
+}	
+
+const void setParameter3(int index, float value)
+{
+    if (auto* param = filter->getParameters()[index])	
+    {
+    param->setValue(value);
+    param->sendValueChangedMessageToListeners (value);    
+	}
+}	
+
+bool isParameterAutomatable3(int index)
+{
+    if (auto* param = filter->getParameters()[index])
+    return param->isAutomatable();
+
+    return true;
+}
+
+const String getParameterName3(int index)
+{
+    if(auto* param = filter->getParameters()[index])
+    return param->getName(1024);
+    else
+    return {};
+}    
 
     void lv2ConnectPort (uint32 portId, void* dataLocation)
     {
@@ -1307,7 +1395,7 @@ public:
             }
         }
 
-        for (int i=0; i < filter->getNumParameters(); ++i)
+        for (int i=0; i < filter->getParameters().size(); ++i)
         {
             if (portId == index++)
             {
@@ -1374,7 +1462,7 @@ public:
 
                     if (lastControlValues[i] != curValue)
                     {
-                        filter->setParameter (i, curValue);
+                        setParameter3(i, curValue);
                         lastControlValues.setUnchecked (i, curValue);
                     }
                 }
@@ -1749,7 +1837,7 @@ public:
             // update input control ports now
             for (int i = 0; i < portControls.size(); ++i)
             {
-                float value = filter->getParameter(i);
+                float value = getParameter3(i);
 
                 if (portControls[i] != nullptr)
                     *portControls[i] = value;
@@ -1859,7 +1947,7 @@ public:
         if (ui != nullptr)
             ui->resetIfNeeded (writeFunction, controller, widget, features);
         else
-            ui = std::make_unique<JuceLv2UIWrapper>(filter.get(), writeFunction, controller, widget, features, isExternal);
+            std::make_unique<JuceLv2UIWrapper>(filter.get(), writeFunction, controller, widget, features, isExternal);
 
         return ui.get();
     }
@@ -1872,9 +1960,9 @@ private:
     SharedResourcePointer<ScopedJuceInitialiser_GUI> sharedJuceGUI;
 #endif
 
-     std::unique_ptr<AudioProcessor> filter;
+    std::unique_ptr<AudioProcessor> filter;
 #if ! JUCE_AUDIOPROCESSOR_NO_GUI
-     std::unique_ptr<JuceLv2UIWrapper> ui;
+    std::unique_ptr<JuceLv2UIWrapper> ui;
 #endif
     HeapBlock<float*> channels;
     MidiBuffer midiEvents;
