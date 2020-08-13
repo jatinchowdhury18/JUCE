@@ -1057,7 +1057,7 @@ public:
 
 private:
     AudioProcessor* const filter;
-    std::make_unique<AudioProcessorEditor> editor;
+    std::unique_ptr<AudioProcessorEditor> editor;
 
     LV2UI_Write_Function writeFunction;
     LV2UI_Controller controller;
