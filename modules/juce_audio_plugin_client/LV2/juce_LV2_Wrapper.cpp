@@ -807,6 +807,7 @@ public:
         X11Symbols::getInstance()->xResizeWindow (display, (Window) getWindowHandle(), cw, ch);
 #else
         setSize (cw, ch);
+#endif
 
         if (uiResize != nullptr)
             uiResize->ui_resize (uiResize->handle, cw, ch);
@@ -828,6 +829,12 @@ private:
 #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JuceLv2ParentContainer);
+};
+
+//==============================================================================
+/**
+    Juce LV2 UI handle
+*/
 class JuceLv2UIWrapper : public AudioProcessorListener,
                          public Timer
 {
