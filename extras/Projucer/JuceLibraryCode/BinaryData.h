@@ -9,22 +9,22 @@
 namespace BinaryData
 {
     extern const char*   LaunchScreen_storyboard;
-    const int            LaunchScreen_storyboardSize = 1042;
+    const int            LaunchScreen_storyboardSize = 1058;
 
     extern const char*   PIPAudioProcessor_cpp_in;
-    const int            PIPAudioProcessor_cpp_inSize = 483;
+    const int            PIPAudioProcessor_cpp_inSize = 499;
 
     extern const char*   PIPComponent_cpp_in;
     const int            PIPComponent_cpp_inSize = 2275;
 
     extern const char*   PIPConsole_cpp_in;
-    const int            PIPConsole_cpp_inSize = 299;
+    const int            PIPConsole_cpp_inSize = 309;
 
     extern const char*   RecentFilesMenuTemplate_nib;
     const int            RecentFilesMenuTemplate_nibSize = 2842;
 
     extern const char*   UnityPluginGUIScript_cs_in;
-    const int            UnityPluginGUIScript_cs_inSize = 6424;
+    const int            UnityPluginGUIScript_cs_inSize = 6605;
 
     extern const char*   gradlewrapper_jar;
     const int            gradlewrapper_jarSize = 53636;
@@ -59,8 +59,8 @@ namespace BinaryData
     extern const char*   export_xcode_svg;
     const int            export_xcode_svgSize = 12323;
 
-    extern const char*   huckleberry_icon_svg;
-    const int            huckleberry_icon_svgSize = 3425;
+    extern const char*   gpl_logo_svg;
+    const int            gpl_logo_svgSize = 27052;
 
     extern const char*   jucelogowithtext_svg;
     const int            jucelogowithtext_svgSize = 5455;
@@ -184,9 +184,6 @@ namespace BinaryData
 
     extern const char*   jucer_PIPTemplate_h;
     const int            jucer_PIPTemplate_hSize = 517;
-
-    extern const char*   jucer_UnityPluginGUIScript_cs;
-    const int            jucer_UnityPluginGUIScript_csSize = 6614;
 
     extern const char*   colourscheme_dark_xml;
     const int            colourscheme_dark_xmlSize = 1050;
