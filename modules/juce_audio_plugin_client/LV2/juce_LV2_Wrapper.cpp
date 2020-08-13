@@ -559,8 +559,6 @@ struct SharedMessageThread  : public Thread
 
         MessageManager::getInstance()->setCurrentThreadAsMessageThread();
 
-        ScopedXDisplay xDisplay;
-
         while ((! threadShouldExit()) && MessageManager::getInstance()->runDispatchLoopUntil (250))
         {}
     }
@@ -760,11 +758,7 @@ public:
         const int cw = child->getWidth();
         const int ch = child->getHeight();
 
-#if JUCE_LINUX
-        XResizeWindow (display.display, (Window) getWindowHandle(), cw, ch);
-#else
         setSize (cw, ch);
-#endif
 
         if (uiResize != nullptr)
             uiResize->ui_resize (uiResize->handle, cw, ch);
@@ -781,9 +775,6 @@ public:
 private:
     //==============================================================================
     const LV2UI_Resize* uiResize;
-#if JUCE_LINUX
-    ScopedXDisplay display;
-#endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JuceLv2ParentContainer);
 };
@@ -1040,10 +1031,6 @@ private:
     ScopedPointer<JuceLv2ParentContainer> parentContainer;
     const LV2UI_Resize* uiResize;
 
-#if JUCE_LINUX
-    ScopedXDisplay display;
-#endif
-
     //==============================================================================
     void resetExternalUI (const LV2_Feature* const* features)
     {
@@ -1102,7 +1089,7 @@ private:
 #if JUCE_LINUX
             Window hostWindow = (Window) parent;
             Window editorWnd  = (Window) parentContainer->getWindowHandle();
-            XReparentWindow (display.display, editorWnd, hostWindow, 0, 0);
+            // XReparentWindow (display.display, editorWnd, hostWindow, 0, 0);
 #endif
 
             parentContainer->reset (uiResize);
