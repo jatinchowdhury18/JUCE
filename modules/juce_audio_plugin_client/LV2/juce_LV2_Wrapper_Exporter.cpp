@@ -461,12 +461,15 @@ static const String makePresetsFile (AudioProcessor* const filter)
 /** Creates manifest.ttl, plugin.ttl and presets.ttl files */
 static void createLv2Files(const char* basename)
 {
+    std::cout << "Initialising plugin..." << std::endl;
     const ScopedJuceInitialiser_GUI juceInitialiser;
     std::unique_ptr<AudioProcessor> filter(createPluginFilterOfType (AudioProcessor::wrapperType_LV2));
 
+    std::cout << "Finding max total channels..." << std::endl;
     int maxNumInputChannels, maxNumOutputChannels;
     findMaxTotalChannels(filter, maxNumInputChannels, maxNumOutputChannels);
 
+    std::cout << "Defining TTL name..." << std::endl;
     String binary(basename);
     String binaryTTL(binary + ".ttl");
 
@@ -497,5 +500,6 @@ static void createLv2Files(const char* basename)
 JUCE_EXPORTED_FUNCTION void lv2_generate_ttl (const char* basename);
 JUCE_EXPORTED_FUNCTION void lv2_generate_ttl (const char* basename)
 {
+    std::cout << "Creating LV2 files..." << std::endl;
     createLv2Files (basename);
 }
