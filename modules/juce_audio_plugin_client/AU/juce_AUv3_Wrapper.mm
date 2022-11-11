@@ -601,12 +601,12 @@ public:
     };
 
     //==============================================================================
-    void audioProcessorChanged ([[maybe_unused]] AudioProcessor* processor, const ChangeDetails& details) override
+    void audioProcessorChanged (AudioProcessor* processor, const ChangeDetails& details) override
     {
         if (details.programChanged)
         {
             {
-                ScopedKeyChange scope (au, @"allParameterValues");
+                ScopedKeyChange scope(au, @"allParameterValues");
                 addPresets();
             }
 
@@ -618,6 +618,12 @@ public:
         if (details.latencyChanged)
         {
             ScopedKeyChange scope (au, @"latency");
+        }
+        
+        if (details.parameterInfoChanged)
+        {
+            ScopedKeyChange scope(au, @"parameterTree");
+            refreshParameters (*processor);
         }
     }
 
@@ -1259,11 +1265,11 @@ private:
         return result;
     }
 
-    void addParameters()
+    void refreshParameters (AudioProcessor& processor)
     {
-        auto& processor = getAudioProcessor();
-        juceParameters.update (processor, forceLegacyParamIDs);
-
+        paramAddresses.clear();
+        paramMap.clear();
+        
         // This is updated when we build the tree.
         overviewParams.reset ([NSMutableArray<NSNumber*> new]);
 
@@ -1287,6 +1293,14 @@ private:
             // or do your identifiers have unusual characters in them?
             jassertfalse;
         }
+    }
+
+    void addParameters()
+    {
+        auto& processor = getAudioProcessor();
+        juceParameters.update (processor, forceLegacyParamIDs);
+
+        refreshParameters (processor);
 
         paramObserver           = CreateObjCBlock (this, &JuceAudioUnitv3::valueChangedFromHost);
         paramProvider           = CreateObjCBlock (this, &JuceAudioUnitv3::getValue);
