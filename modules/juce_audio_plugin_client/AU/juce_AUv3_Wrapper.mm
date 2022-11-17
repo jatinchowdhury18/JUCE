@@ -1293,15 +1293,7 @@ private:
             // or do your identifiers have unusual characters in them?
             jassertfalse;
         }
-    }
-
-    void addParameters()
-    {
-        auto& processor = getAudioProcessor();
-        juceParameters.update (processor, forceLegacyParamIDs);
-
-        refreshParameters (processor);
-
+        
         paramObserver           = CreateObjCBlock (this, &JuceAudioUnitv3::valueChangedFromHost);
         paramProvider           = CreateObjCBlock (this, &JuceAudioUnitv3::getValue);
         stringFromValueProvider = CreateObjCBlock (this, &JuceAudioUnitv3::stringFromValue);
@@ -1317,6 +1309,14 @@ private:
             editorParamObserver = CreateObjCBlock (this, &JuceAudioUnitv3::valueChangedForObserver);
             editorObserverToken = [paramTree.get() tokenByAddingParameterObserver: editorParamObserver];
         }
+    }
+
+    void addParameters()
+    {
+        auto& processor = getAudioProcessor();
+        juceParameters.update (processor, forceLegacyParamIDs);
+
+        refreshParameters (processor);
 
         if ((bypassParam = processor.getBypassParameter()) != nullptr)
             bypassParam->addListener (this);
