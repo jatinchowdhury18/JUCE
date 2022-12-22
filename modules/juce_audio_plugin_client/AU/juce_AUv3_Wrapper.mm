@@ -1267,9 +1267,16 @@ private:
 
     void refreshParameters (AudioProcessor& processor)
     {
+        paramObserver = nullptr;
+        paramProvider = nullptr;
+        stringFromValueProvider = nullptr;
+        valueFromStringProvider = nullptr;
+        editorParamObserver = nullptr;
+        editorObserverToken = nullptr;
+        
         paramAddresses.clear();
         paramMap.clear();
-        
+
         // This is updated when we build the tree.
         overviewParams.reset ([NSMutableArray<NSNumber*> new]);
 
@@ -1293,7 +1300,7 @@ private:
             // or do your identifiers have unusual characters in them?
             jassertfalse;
         }
-        
+
         paramObserver           = CreateObjCBlock (this, &JuceAudioUnitv3::valueChangedFromHost);
         paramProvider           = CreateObjCBlock (this, &JuceAudioUnitv3::getValue);
         stringFromValueProvider = CreateObjCBlock (this, &JuceAudioUnitv3::stringFromValue);
