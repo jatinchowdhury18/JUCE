@@ -185,6 +185,8 @@ public:
     */
     virtual void systemRequestedQuit() = 0;
 
+    virtual void systemHotkeyPressed (uint64_t) {}
+
     /** This method is called when the application is being put into background mode
         by the operating system.
     */

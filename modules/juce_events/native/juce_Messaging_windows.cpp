@@ -134,6 +134,11 @@ public:
                 if (auto* app = JUCEApplicationBase::getInstance())
                     app->systemRequestedQuit();
             }
+            else if (m.message == WM_HOTKEY)
+            {
+                if (auto* app = JUCEApplicationBase::getInstance())
+                    app->systemHotkeyPressed (m.wParam);
+            }
             else if (isEventBlockedByModalComps == nullptr || ! isEventBlockedByModalComps (m))
             {
                 if ((m.message == WM_LBUTTONDOWN || m.message == WM_RBUTTONDOWN)
